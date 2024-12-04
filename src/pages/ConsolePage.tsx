@@ -11,7 +11,7 @@
 const LOCAL_RELAY_SERVER_URL: string =
   process.env.REACT_APP_LOCAL_RELAY_SERVER_URL || '';
 
-import { useEffect, useRef, useCallback, useState } from 'react';
+import { useEffect, useRef, useCallback, useState, useMemo } from 'react';
 
 import { RealtimeClient } from '@openai/realtime-api-beta';
 import { ItemType } from '@openai/realtime-api-beta/dist/lib/client.js';
@@ -22,27 +22,27 @@ import { WavRenderer } from '../utils/wav_renderer';
 import { X, Edit, Zap, ArrowUp, ArrowDown } from 'react-feather';
 import { Button } from '../components/button/Button';
 import { Toggle } from '../components/toggle/Toggle';
-import { Map } from '../components/Map';
+
 
 import './ConsolePage.scss';
-import { isJsxOpeningLikeElement } from 'typescript';
+// import { isJsxOpeningLikeElement } from 'typescript';
 
-/**
- * Type for result from get_weather() function call
- */
-interface Coordinates {
-  lat: number;
-  lng: number;
-  location?: string;
-  temperature?: {
-    value: number;
-    units: string;
-  };
-  wind_speed?: {
-    value: number;
-    units: string;
-  };
-}
+// /**
+//  * Type for result from get_weather() function call
+//  */
+// interface Coordinates {
+//   lat: number;
+//   lng: number;
+//   location?: string;
+//   temperature?: {
+//     value: number;
+//     units: string;
+//   };
+//   wind_speed?: {
+//     value: number;
+//     units: string;
+//   };
+// }
 
 /**
  * Type for all event logs
@@ -112,18 +112,17 @@ export function ConsolePage() {
    */
   const [items, setItems] = useState<ItemType[]>([]);
   const [realtimeEvents, setRealtimeEvents] = useState<RealtimeEvent[]>([]);
-  const [expandedEvents, setExpandedEvents] = useState<{
-    [key: string]: boolean;
-  }>({});
   const [isConnected, setIsConnected] = useState(false);
   const [canPushToTalk, setCanPushToTalk] = useState(true);
   const [isRecording, setIsRecording] = useState(false);
   const [memoryKv, setMemoryKv] = useState<{ [key: string]: any }>({});
-  const [coords, setCoords] = useState<Coordinates | null>({
-    lat: 37.775593,
-    lng: -122.418137,
-  });
-  const [marker, setMarker] = useState<Coordinates | null>(null);
+
+  const [selectedItem, setSelectedItem] = useState<string>("");
+
+  const greetMessage = useMemo(
+    () => `Speak and Greet in ${selectedItem || 'your language'}!`,
+    [selectedItem]
+  );
 
   /**
    * Utility for formatting the timing of logs
@@ -172,6 +171,8 @@ export function ConsolePage() {
     setIsConnected(true);
     setRealtimeEvents([]);
     setItems(client.conversation.getItems());
+    setSelectedItem(greetMessage);
+    const languageGreeting = `Speak and Greet in ${selectedItem || 'your language'} in entire conversation. Don't use other language to speak. Imagine you are in the spaceship for the last 5 years. Talk to me like that only! speak shorter sentence only and to the point `;
 
     // Connect to microphone
     await wavRecorder.begin();
@@ -184,7 +185,7 @@ export function ConsolePage() {
     client.sendUserMessageContent([
       {
         type: `input_text`,
-        text: `Hello!`,
+        text: languageGreeting
         // text: `For testing purposes, I want you to list ten car brands. Number each item, e.g. "one (or whatever number you are one): the item name".`
       },
     ]);
@@ -192,7 +193,7 @@ export function ConsolePage() {
     if (client.getTurnDetectionType() === 'server_vad') {
       await wavRecorder.record((data) => client.appendInputAudio(data.mono));
     }
-  }, []);
+  }, [selectedItem]);
 
   /**
    * Disconnect and reset conversation state
@@ -202,11 +203,11 @@ export function ConsolePage() {
     setRealtimeEvents([]);
     setItems([]);
     setMemoryKv({});
-    setCoords({
-      lat: 37.775593,
-      lng: -122.418137,
-    });
-    setMarker(null);
+    // setCoords({
+    //   lat: 37.775593,
+    //   lng: -122.418137,
+    // });
+    // setMarker(null);
 
     const client = clientRef.current;
     client.disconnect();
@@ -269,20 +270,20 @@ export function ConsolePage() {
     setCanPushToTalk(value === 'none');
   };
 
-  /**
-   * Auto-scroll the event logs
-   */
-  useEffect(() => {
-    if (eventsScrollRef.current) {
-      const eventsEl = eventsScrollRef.current;
-      const scrollHeight = eventsEl.scrollHeight;
-      // Only scroll if height has just changed
-      if (scrollHeight !== eventsScrollHeightRef.current) {
-        eventsEl.scrollTop = scrollHeight;
-        eventsScrollHeightRef.current = scrollHeight;
-      }
-    }
-  }, [realtimeEvents]);
+  // /**
+  //  * Auto-scroll the event logs
+  //  */
+  // useEffect(() => {
+  //   if (eventsScrollRef.current) {
+  //     const eventsEl = eventsScrollRef.current;
+  //     const scrollHeight = eventsEl.scrollHeight;
+  //     // Only scroll if height has just changed
+  //     if (scrollHeight !== eventsScrollHeightRef.current) {
+  //       eventsEl.scrollTop = scrollHeight;
+  //       eventsScrollHeightRef.current = scrollHeight;
+  //     }
+  //   }
+  // }, [realtimeEvents]);
 
   /**
    * Auto-scroll the conversation logs
@@ -411,49 +412,49 @@ export function ConsolePage() {
         return { ok: true };
       }
     );
-    client.addTool(
-      {
-        name: 'get_weather',
-        description:
-          'Retrieves the weather for a given lat, lng coordinate pair. Specify a label for the location.',
-        parameters: {
-          type: 'object',
-          properties: {
-            lat: {
-              type: 'number',
-              description: 'Latitude',
-            },
-            lng: {
-              type: 'number',
-              description: 'Longitude',
-            },
-            location: {
-              type: 'string',
-              description: 'Name of the location',
-            },
-          },
-          required: ['lat', 'lng', 'location'],
-        },
-      },
-      async ({ lat, lng, location }: { [key: string]: any }) => {
-        setMarker({ lat, lng, location });
-        setCoords({ lat, lng, location });
-        const result = await fetch(
-          `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lng}&current=temperature_2m,wind_speed_10m`
-        );
-        const json = await result.json();
-        const temperature = {
-          value: json.current.temperature_2m as number,
-          units: json.current_units.temperature_2m as string,
-        };
-        const wind_speed = {
-          value: json.current.wind_speed_10m as number,
-          units: json.current_units.wind_speed_10m as string,
-        };
-        setMarker({ lat, lng, location, temperature, wind_speed });
-        return json;
-      }
-    );
+    // client.addTool(
+    //   {
+    //     name: 'get_weather',
+    //     description:
+    //       'Retrieves the weather for a given lat, lng coordinate pair. Specify a label for the location.',
+    //     parameters: {
+    //       type: 'object',
+    //       properties: {
+    //         lat: {
+    //           type: 'number',
+    //           description: 'Latitude',
+    //         },
+    //         lng: {
+    //           type: 'number',
+    //           description: 'Longitude',
+    //         },
+    //         location: {
+    //           type: 'string',
+    //           description: 'Name of the location',
+    //         },
+    //       },
+    //       required: ['lat', 'lng', 'location'],
+    //     },
+    //   },
+    //   async ({ lat, lng, location }: { [key: string]: any }) => {
+    //     setMarker({ lat, lng, location });
+    //     setCoords({ lat, lng, location });
+    //     const result = await fetch(
+    //       `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lng}&current=temperature_2m,wind_speed_10m`
+    //     );
+    //     const json = await result.json();
+    //     const temperature = {
+    //       value: json.current.temperature_2m as number,
+    //       units: json.current_units.temperature_2m as string,
+    //     };
+    //     const wind_speed = {
+    //       value: json.current.wind_speed_10m as number,
+    //       units: json.current_units.wind_speed_10m as string,
+    //     };
+    //     setMarker({ lat, lng, location, temperature, wind_speed });
+    //     return json;
+    //   }
+    // );
 
     // handle realtime events from client + server for event logging
     client.on('realtime.event', (realtimeEvent: RealtimeEvent) => {
@@ -507,7 +508,7 @@ export function ConsolePage() {
     <div data-component="ConsolePage">
       <div className="content-top">
         <div className="content-title">
-          <img src="/openai-logomark.svg" />
+          <img src="zupee.jpeg" />
           <span>realtime console</span>
         </div>
         <div className="content-api-key">
@@ -524,8 +525,7 @@ export function ConsolePage() {
       </div>
       <div className="content-main">
         <div className="content-logs">
-          <div className="content-block events">
-            <div className="visualization">
+        <div className="visualization">
               <div className="visualization-entry client">
                 <canvas ref={clientCanvasRef} />
               </div>
@@ -533,71 +533,19 @@ export function ConsolePage() {
                 <canvas ref={serverCanvasRef} />
               </div>
             </div>
-            <div className="content-block-title">events</div>
-            <div className="content-block-body" ref={eventsScrollRef}>
-              {!realtimeEvents.length && `awaiting connection...`}
-              {realtimeEvents.map((realtimeEvent, i) => {
-                const count = realtimeEvent.count;
-                const event = { ...realtimeEvent.event };
-                if (event.type === 'input_audio_buffer.append') {
-                  event.audio = `[trimmed: ${event.audio.length} bytes]`;
-                } else if (event.type === 'response.audio.delta') {
-                  event.delta = `[trimmed: ${event.delta.length} bytes]`;
-                }
-                return (
-                  <div className="event" key={event.event_id}>
-                    <div className="event-timestamp">
-                      {formatTime(realtimeEvent.time)}
-                    </div>
-                    <div className="event-details">
-                      <div
-                        className="event-summary"
-                        onClick={() => {
-                          // toggle event details
-                          const id = event.event_id;
-                          const expanded = { ...expandedEvents };
-                          if (expanded[id]) {
-                            delete expanded[id];
-                          } else {
-                            expanded[id] = true;
-                          }
-                          setExpandedEvents(expanded);
-                        }}
-                      >
-                        <div
-                          className={`event-source ${
-                            event.type === 'error'
-                              ? 'error'
-                              : realtimeEvent.source
-                          }`}
-                        >
-                          {realtimeEvent.source === 'client' ? (
-                            <ArrowUp />
-                          ) : (
-                            <ArrowDown />
-                          )}
-                          <span>
-                            {event.type === 'error'
-                              ? 'error!'
-                              : realtimeEvent.source}
-                          </span>
-                        </div>
-                        <div className="event-type">
-                          {event.type}
-                          {count && ` (${count})`}
-                        </div>
-                      </div>
-                      {!!expandedEvents[event.event_id] && (
-                        <div className="event-payload">
-                          {JSON.stringify(event, null, 2)}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
+         <div>
+      <label htmlFor="dropdown">Choose an option:</label>
+      <select value={selectedItem} onChange={(e) => setSelectedItem(e.target.value)}>
+         <option value="" disabled>
+           Select the Language
+         </option>
+         <option value="English">English</option>
+         <option value="Hindi">Hindi</option>
+         <option value="Marathi">Marathi</option>
+       </select>
+       <p>Selected Language: {selectedItem || ""}</p>
+    </div>
+        
           <div className="content-block conversation">
             <div className="content-block-title">conversation</div>
             <div className="content-block-body" data-conversation-content>
@@ -691,7 +639,7 @@ export function ConsolePage() {
             />
           </div>
         </div>
-        <div className="content-right">
+        {/* <div className="content-right">
           <div className="content-block map">
             <div className="content-block-title">get_weather()</div>
             <div className="content-block-title bottom">
@@ -724,8 +672,9 @@ export function ConsolePage() {
               {JSON.stringify(memoryKv, null, 2)}
             </div>
           </div>
-        </div>
+        </div> */}
       </div>
     </div>
   );
 }
+
