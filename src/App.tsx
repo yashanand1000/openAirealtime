@@ -2,20 +2,19 @@ import './App.scss';
 import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 import HomePage from './pages/HomePage';
 import LanguageSelect from './pages/LanguageSelect';
-import { ConsolePage } from './pages/ConsolePage';
+import ConsolePage from './pages/ConsolePage';
 
 function App() {
-  const theme = 'light';
-  const language = 'en';
+  // const theme = 'light';
 
   return (
     <Router>
       <div data-component="App">
-        {/* <Routes>
-          <Route path="/" element={<HomePage theme={theme} language={language} />} />
+        <Routes>
+          <Route path="/" element={<HomePage />} />
           <Route path="/language-select" element={<LanguageSelect />} />
-        </Routes> */}
-        <ConsolePage />
+          <Route path="/console" element={<ConsolePage />} />
+        </Routes>
       </div>
     </Router>
   );

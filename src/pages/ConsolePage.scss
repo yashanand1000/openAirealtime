@@ -95,6 +95,7 @@
           z-index: 9999;
           text-align: center;
           white-space: pre;
+          color: white;
           &.bottom {
             top: auto;
             bottom: 16px;
@@ -140,9 +141,9 @@
         flex-shrink: 0;
         width: 100%;
         overflow: hidden;
-        height: 600px;
+        height: 800px;
         min-height: 0;
-        max-height: 600px;
+        max-height: 800px;
         border-top: 1px solid #e7e7e7;
       }
     }
@@ -252,6 +253,7 @@
 
   .visualization {
     position: absolute;
+    width: 100%;
     display: flex;
     bottom: 4px;
     right: 8px;
@@ -264,7 +266,7 @@
       display: flex;
       align-items: center;
       height: 40px;
-      width: 100px;
+      width: 100%;
       gap: 4px;
       &.client {
         color: #0099ff;

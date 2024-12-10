@@ -1,60 +1,71 @@
-import { useState } from 'react';
-import './LanguageSelect.scss';
-import HomePage from './HomePage';  // 'HomePage' से 'homePage' में बदलें
+import React, { useState } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
+import "./LanguageSelect.scss"; // Import external CSS for better styling
 
-function App() {
-  const [selectedTheme, setSelectedTheme] = useState(localStorage.getItem('theme') || '');
-  const [selectedLanguage, setSelectedLanguage] = useState(localStorage.getItem('language') || '');
+const LanguageSelect: React.FC = () => {
+  const navigate = useNavigate();
+  const location = useLocation();
 
-  const handleThemeChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const theme = e.target.value;
-    setSelectedTheme(theme);
-    localStorage.setItem('theme', theme);
-  };
+  // Retrieve the theme from state
+  const { title } = location.state || {};
 
-  const handleLanguageChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const language = e.target.value;
-    setSelectedLanguage(language);
-    localStorage.setItem('language', language);
+  if (!title) {
+    console.log("Theme is null");
+  } else {
+    console.log("Theme is:", title);
+  }
+
+  // State to manage the selected language
+  const [selectedLanguage, setSelectedLanguage] = useState<string>("");
+
+  const options = [
+    { label: "English", value: "English" },
+    { label: "Spanish", value: "Spanish" },
+    { label: "French", value: "French" },
+    { label: "German", value: "German" },
+    { label: "Hindi", value: "Hindi" },
+    { label: "Punjabi", value: "Punjabi" },
+    { label: "Bhojpuri", value: "Bhojpuri" },
+    { label: "Marathi", value: "Marathi" },
+  ];
+
+  // Handle selection and navigate to the new page
+  const handleProceed = () => {
+    if (!selectedLanguage) {
+      alert("Please select a language first.");
+      return;
+    }
+    navigate("/console", { state: { title, language: selectedLanguage } });
   };
 
   return (
-    <div data-component="App">
-      <div className="selectors-container">
-        <div className="selector">
-          <label htmlFor="theme">Select Theme:</label>
-          <select 
-            id="theme" 
-            value={selectedTheme} 
-            onChange={handleThemeChange}
+    <div className="main-container">
+      <div className="language-select">
+        <h1>Select Your Language</h1>
+        <p className={!title ? "no-theme" : ""}>
+          {!title ? "No theme selected. Please select a language." : `Current theme: ${title}`}
+        </p>
+        <div className="select-container">
+          <select
+            value={selectedLanguage}
+            onChange={(e) => setSelectedLanguage(e.target.value)}
           >
-            <option value="" disabled>Choose Theme</option>
-            <option value="light">Light</option>
-            <option value="dark">Dark</option>
-            <option value="system">System</option>
+            <option value="" disabled>
+              Select a Language
+            </option>
+            {options.map((option) => (
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
+            ))}
           </select>
         </div>
-
-        {selectedTheme && (
-          <div className="selector">
-            <label htmlFor="language">Select Language:</label>
-            <select 
-              id="language" 
-              value={selectedLanguage} 
-              onChange={handleLanguageChange}
-            >
-              <option value="" disabled>Choose Language</option>
-              <option value="en">English</option>
-              <option value="hi">Hindi</option>
-              <option value="es">Spanish</option>
-            </select>
-          </div>
-        )}
+        <button onClick={handleProceed} className="proceed-btn">
+          Proceed
+        </button>
       </div>
-
-      <HomePage theme={selectedTheme} language={selectedLanguage} />
     </div>
   );
-}
+};
 
-export default App;
+export default LanguageSelect;

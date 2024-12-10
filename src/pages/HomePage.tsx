@@ -2,12 +2,7 @@ import React from "react";
 import "./HomePage.scss"; // External CSS file or use styled-components/tailwind
 import { useNavigate } from 'react-router-dom';
 
-interface HomePageProps {
-  theme: string;
-  language: string;
-}
-
-const HomePage: React.FC<HomePageProps> = ({ theme, language }) => {
+const HomePage: React.FC<{}> = () => {
   const navigate = useNavigate();
 
   const tryTheseItems = [
@@ -41,25 +36,15 @@ const HomePage: React.FC<HomePageProps> = ({ theme, language }) => {
     "RPG & Puzzles",
   ];
 
-  const handleGoogleLogin = () => {
-    window.open('http://localhost:8081/auth/google', '_self');
+  const handleBoxClick = (title: string) => {
+    navigate('/language-select', { state: { title } }); // Pass the theme via navigate
   };
-
-  const handleBoxClick = () => {
-    navigate('/language-select');
-  };
-
 
   return (
     <div className="homepage">
       {/* Header */}
       <header className="header">
         <div className="logo">Zupee</div>
-        <div className="header-right">
-          <button className="btn" onClick={handleGoogleLogin}>Sign Up to Chat</button>
-          <button className="btn secondary" onClick={handleGoogleLogin}>Login</button>
-          <input type="text" className="search-bar" placeholder="Search" />
-        </div>
       </header>
 
       {/* Main Content */}
@@ -67,55 +52,61 @@ const HomePage: React.FC<HomePageProps> = ({ theme, language }) => {
         {/* For You Section */}
         <section className="for-you">
           <h2>For You</h2>
-          <div className="placeholder-grid" onClick={handleBoxClick} style={{ cursor: 'pointer' }}>
-            {Array(4)
-              .fill(0)
-              .map((_, i) => (
-                <div key={crypto.randomUUID()} className="placeholder-box"></div>
-              ))}
+          <div className="placeholder-grid" style={{ cursor: 'pointer' }}>
+            {tryTheseItems.map((item) => (
+              <div
+                key={item.title}
+                className="placeholder-box"
+                onClick={() => handleBoxClick(item.title)}
+              >
+                <p>{item.title}</p>
+                <span>with {item.helper}</span>
+              </div>
+            ))}
           </div>
         </section>
 
         {/* Try These Section */}
-<section className="try-these">
-  <h2>Try These</h2>
-  <div className="scrollable-row">
-    {tryTheseItems.map((item) => (
-      <div key={item.title} className="try-item">
-        <p>{item.title}</p>
-        <span>with {item.helper}</span>
-      </div>
-    ))}
-  </div>
-</section>
+        <section className="try-these" style={{ cursor: 'pointer' }}>
+          <h2>Try These</h2>
+          <div className="scrollable-row">
+            {tryTheseItems.map((item) => (
+              <div 
+              key={item.title} 
+              className="try-item"
+              onClick={() => handleBoxClick(item.title)}
+              >
+                <p>{item.title}</p>
+                <span>with {item.helper}</span>
+              </div>
+            ))}
+          </div>
+        </section>
 
-<section className="featured">
-  <h2>Featured</h2>
-  <div className="grid-container">
-    {featuredItems.map((item) => (
-      <div key={item.title} className="featured-card">
-        <p>{item.title}</p>
-        <span>By {item.helper}</span>
-        <span>{item.views}</span>
-      </div>
-    ))}
-  </div>
-</section>
-<section className="categories">
-  <div className="scrollable-row">
-    {categories.map((category) => (
-      <div key={category} className="category-tab">
-        {category}
-      </div>
-    ))}
-  </div>
-</section>
-
-        {/* Category Tabs */}
-        <section className="categories">
+        <section className="featured" style={{ cursor: 'pointer' }}>
+          <h2>Featured</h2>
+          <div className="grid-container">
+            {featuredItems.map((item) => (
+              <div 
+              key={item.title} 
+              className="featured-card"
+              onClick={() => handleBoxClick(item.title)}
+              >
+                <p>{item.title}</p>
+                <span>By {item.helper}</span>
+                <span>{item.views}</span>
+              </div>
+            ))}
+          </div>
+        </section>
+        <section className="categories" style={{ cursor: 'pointer' }}>
           <div className="scrollable-row">
             {categories.map((category) => (
-              <div key={category} className="category-tab">
+              <div 
+              key={category} 
+              className="category-tab"
+              onClick={() => handleBoxClick(category)}
+              >
                 {category}
               </div>
             ))}
